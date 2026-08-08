@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
+
 function Input({
   label,
   type = "text",
@@ -9,42 +12,70 @@ function Input({
   className = "",
   error,
   id,
+  ...props
 }) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPasswordType = type === "password";
+  const actualType = isPasswordType ? (showPassword ? "text" : "password") : type;
+
   return (
-    <div className={`flex flex-col gap-2 ${className}`}>
+    <div className={`flex flex-col gap-1.5 ${className}`}>
       {label && (
         <label
           htmlFor={id}
-          className="text-xs font-semibold uppercase tracking-wider text-slate-400"
+          className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400 light:text-slate-600"
+          style={{ marginBottom: "2px" }}
         >
           {label}
-          {required && <span className="text-rose-400 ml-1">*</span>}
+          {required && <span className="text-rose-500 ml-1">*</span>}
         </label>
       )}
-      <div className="relative">
+      <div className="relative flex items-center">
         {Icon && (
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+          <div
+            className="absolute left-4 flex items-center justify-center text-slate-400 pointer-events-none z-10"
+            style={{ width: "20px", height: "20px" }}
+          >
             <Icon size={18} />
           </div>
         )}
         <input
           id={id}
-          type={type}
+          type={actualType}
           placeholder={placeholder}
           value={value}
           onChange={onChange}
           required={required}
+          {...props}
+          style={{
+            width: "100%",
+            height: "48px",
+            lineHeight: "48px",
+            paddingLeft: Icon ? "46px" : "16px",
+            paddingRight: isPasswordType ? "46px" : "16px",
+            borderRadius: "14px",
+            fontSize: "14px",
+            fontWeight: 500,
+            transition: "all 0.2s ease",
+            outline: "none",
+          }}
           className={`
-            w-full bg-slate-900/60 border border-slate-700/60 rounded-xl
-            px-4 py-3 text-sm text-slate-100 placeholder-slate-500
-            focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500
-            transition-all duration-200
-            ${Icon ? "pl-11" : ""}
-            ${error ? "border-rose-500/60 focus:ring-rose-500/40" : ""}
+            border transition-all duration-200
+            ${error ? "border-rose-500 ring-1 ring-rose-500/50" : ""}
           `}
         />
+        {isPasswordType && (
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-4 flex items-center justify-center text-slate-400 hover:text-slate-200 transition-colors z-10"
+            style={{ width: "20px", height: "20px", background: "none", border: "none", cursor: "pointer" }}
+          >
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        )}
       </div>
-      {error && <p className="text-xs text-rose-400 font-medium">{error}</p>}
+      {error && <p className="text-xs text-rose-500 font-medium mt-1">{error}</p>}
     </div>
   );
 }

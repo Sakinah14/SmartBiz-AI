@@ -21,15 +21,15 @@
 
 /* ── Light mode ── */
 html.light {
-  --bg-primary: #f1f5f9;
+  --bg-primary: #f8fafc;
   --bg-secondary: #ffffff;
-  --bg-card: rgba(255, 255, 255, 0.95);
-  --bg-card-hover: #ffffff;
-  --bg-inner-box: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-card-hover: #f1f5f9;
+  --bg-inner-box: #f1f5f9;
   --text-primary: #0f172a;
   --text-secondary: #334155;
   --text-muted: #64748b;
-  --border-subtle: rgba(203, 213, 225, 0.7);
+  --border-subtle: rgba(203, 213, 225, 0.8);
   --border-glow: rgba(99, 102, 241, 0.3);
   --glow-indigo: rgba(99, 102, 241, 0.08);
   --glow-cyan: rgba(6, 182, 212, 0.08);
@@ -89,7 +89,7 @@ html.light ::-webkit-scrollbar-thumb { background: rgba(99, 102, 241, 0.4); }
 
 html.light .glass-card {
   background: #ffffff;
-  border-color: rgba(203, 213, 225, 0.7);
+  border-color: rgba(203, 213, 225, 0.8);
   box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
 }
 
@@ -106,36 +106,65 @@ html.light .glass-card {
   background-clip: text;
 }
 
-/* ── Light Mode Color Rules ── */
-html.light .text-white {
-  color: #0f172a;
+/* ── HIGH-CONTRAST LIGHT MODE RE-MAPPING RULES ── */
+
+/* 1. Dark Panel protection: Dark hero panels, dark buttons, dark badges ALWAYS keep white text */
+.dark-panel,
+.dark-panel *,
+[data-theme="dark-panel"],
+[data-theme="dark-panel"] * {
+  color-scheme: dark !important;
 }
-/* Retain white text inside dark buttons, icons, avatars, and badge fills */
-html.light button.bg-indigo-600 .text-white,
-html.light button.bg-gradient-to-r .text-white,
-html.light button[class*="bg-gradient"] .text-white,
-html.light button[class*="bg-gradient"] *,
-html.light .bg-gradient-to-br .text-white,
-html.light .bg-gradient-to-br *,
-html.light .bg-indigo-600,
-html.light .bg-violet-600,
-html.light [class*="bg-gradient-to"] {
+
+.dark-panel .text-white,
+.dark-panel h1,
+.dark-panel h2,
+.dark-panel h3 {
   color: #ffffff !important;
 }
 
-html.light .text-slate-300 { color: #334155; }
-html.light .text-slate-400 { color: #475569; }
-html.light .text-slate-500 { color: #64748b; }
-html.light .text-slate-600 { color: #94a3b8; }
+.dark-panel .text-slate-300 { color: #cbd5e1 !important; }
+.dark-panel .text-slate-400 { color: #94a3b8 !important; }
+.dark-panel .text-slate-500 { color: #64748b !important; }
 
-/* Light mode card inner containers (like recent order items, AI chat box) */
-html.light [class*="bg-slate-900"],
-html.light [class*="bg-slate-800"] {
-  background-color: #f8fafc !important;
-  border-color: #e2e8f0 !important;
+/* 2. Text colors in Light Mode (outside dark panels / gradient buttons) */
+html.light .text-white:not(.dark-panel *):not(button *):not([class*="bg-gradient"] *):not([class*="bg-indigo-600"] *):not([class*="bg-violet-600"] *) {
+  color: #0f172a !important;
 }
 
-/* Light mode input fields & selects */
+html.light .text-slate-400:not(.dark-panel *) {
+  color: #334155 !important; /* Dark Slate — crystal clear high contrast on white */
+}
+
+html.light .text-slate-500:not(.dark-panel *) {
+  color: #475569 !important; /* Medium-Dark Slate — crisp and easily legible */
+}
+
+html.light .text-slate-300:not(.dark-panel *) {
+  color: #1e293b !important; /* Deep Charcoal — sharp text */
+}
+
+html.light .text-slate-200:not(.dark-panel *) {
+  color: #0f172a !important;
+}
+
+html.light .text-slate-600:not(.dark-panel *) {
+  color: #64748b !important;
+}
+
+/* 3. Borders in Light Mode */
+html.light [class*="border-slate-800"],
+html.light [class*="border-slate-700"] {
+  border-color: rgba(203, 213, 225, 0.8) !important;
+}
+
+/* 4. Background containers in Light Mode */
+html.light [class*="bg-slate-900"]:not(.dark-panel *):not(button *),
+html.light [class*="bg-slate-800"]:not(.dark-panel *):not(button *) {
+  background-color: #f8fafc !important;
+}
+
+/* 5. Input fields styling in Light Mode */
 html.light input[type="text"],
 html.light input[type="number"],
 html.light input[type="date"],
@@ -143,20 +172,21 @@ html.light input[type="password"],
 html.light input[type="email"],
 html.light select,
 html.light textarea {
-  background-color: #f8fafc !important;
+  background-color: #ffffff !important;
   color: #0f172a !important;
   border-color: #cbd5e1 !important;
 }
 
 html.light input::placeholder,
 html.light textarea::placeholder {
-  color: #94a3b8 !important;
+  color: #64748b !important;
 }
 
-/* Light mode table header & rows */
+/* 6. Table styling in Light Mode */
 html.light th {
   background-color: #f1f5f9 !important;
-  color: #475569 !important;
+  color: #334155 !important;
+  font-weight: 700 !important;
 }
 html.light tr:hover {
   background-color: #f1f5f9 !important;
