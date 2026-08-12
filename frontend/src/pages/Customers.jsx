@@ -94,7 +94,7 @@ function Customers() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-white">Customers</h1>
           <p className="text-slate-400 text-sm mt-0.5">Manage your customer relationships</p>
@@ -116,9 +116,9 @@ function Customers() {
         </div>
       </div>
 
-      <Card>
+      <Card className="!p-4 sm:!p-5 lg:!p-6">
         {loading ? (
-          <div className="flex items-center justify-center py-16">
+          <div className="flex items-center justify-center py-12">
             <div className="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
           </div>
         ) : (

@@ -84,11 +84,11 @@ function AIAssistant() {
   };
 
   return (
-    <div className="h-full flex flex-col gap-6" style={{ height: "calc(100vh - 160px)" }}>
+    <div className="flex flex-col gap-6 flex-1 min-h-0">
       {/* Header */}
-      <div className="flex items-center justify-between flex-shrink-0">
-        <div>
-          <h1 className="text-3xl font-extrabold text-white flex items-center gap-3 tracking-tight">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-shrink-0">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white flex flex-wrap items-center gap-3 tracking-tight">
             <span className="gradient-text">AI Business Assistant</span>
             <span className="text-xs font-bold bg-gradient-to-r from-violet-600 to-cyan-600 text-white px-3 py-1 rounded-full shadow-md">
               Gemini Flash
@@ -96,7 +96,7 @@ function AIAssistant() {
           </h1>
           <p className="text-slate-400 text-sm mt-1">Real-time analytical insights & recommendations for your business</p>
         </div>
-        <div className="p-3.5 rounded-2xl bg-gradient-to-br from-violet-600 to-cyan-600 shadow-xl shadow-violet-500/25 animate-float hidden sm:block">
+        <div className="p-3.5 rounded-2xl bg-gradient-to-br from-violet-600 to-cyan-600 shadow-xl shadow-violet-500/25 animate-float hidden sm:block flex-shrink-0">
           <Bot size={26} className="text-white" />
         </div>
       </div>

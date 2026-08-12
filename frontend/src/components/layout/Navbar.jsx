@@ -19,13 +19,13 @@ function Navbar({ onMenuToggle }) {
 
   return (
     <header
+      className="px-4 sm:px-6 lg:px-10 gap-3"
       style={{
         height: "72px",
         borderBottom: isDark ? "1px solid rgba(30,41,59,0.8)" : "1px solid rgba(203,213,225,0.6)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 40px",
         flexShrink: 0,
         zIndex: 30,
         background: isDark ? "rgba(7, 10, 19, 0.9)" : "rgba(255, 255, 255, 0.95)",
@@ -35,7 +35,7 @@ function Navbar({ onMenuToggle }) {
       }}
     >
       {/* Left — Page title */}
-      <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+      <div className="flex-shrink-0 min-w-0" style={{ display: "flex", alignItems: "center", gap: "16px" }}>
         {onMenuToggle && (
           <button
             onClick={onMenuToggle}
@@ -68,17 +68,18 @@ function Navbar({ onMenuToggle }) {
       </div>
 
       {/* Center — Search */}
-      <div style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "10px",
-        background: isDark ? "rgba(15,23,42,0.6)" : "rgba(241,245,249,0.8)",
-        border: isDark ? "1px solid rgba(51,65,85,0.6)" : "1px solid rgba(203,213,225,0.7)",
-        borderRadius: "16px",
-        padding: "8px 16px",
-        width: "360px",
-        transition: "all 0.2s ease",
-      }}>
+      <div
+        className="hidden lg:flex flex-1 min-w-0 max-w-[300px] xl:max-w-[360px] mx-4"
+        style={{
+          alignItems: "center",
+          gap: "10px",
+          background: isDark ? "rgba(15,23,42,0.6)" : "rgba(241,245,249,0.8)",
+          border: isDark ? "1px solid rgba(51,65,85,0.6)" : "1px solid rgba(203,213,225,0.7)",
+          borderRadius: "16px",
+          padding: "8px 16px",
+          transition: "all 0.2s ease",
+        }}
+      >
         <Search size={15} color={isDark ? "#64748b" : "#94a3b8"} />
         <input
           type="text"
@@ -105,7 +106,7 @@ function Navbar({ onMenuToggle }) {
       </div>
 
       {/* Right — Actions */}
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+      <div className="flex-shrink-0" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
         {/* Theme toggle */}
         <button
           onClick={toggleTheme}
@@ -195,7 +196,7 @@ function Navbar({ onMenuToggle }) {
               border: isDark ? "2px solid #070a13" : "2px solid #ffffff",
             }} />
           </div>
-          <div>
+          <div className="hidden lg:block">
             <p style={{ fontSize: "13px", fontWeight: 700, color: isDark ? "#f8fafc" : "#0f172a", lineHeight: 1.2 }}>
               Business Owner
             </p>

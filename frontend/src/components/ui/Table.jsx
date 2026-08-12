@@ -33,7 +33,7 @@ function Table({ columns, data, searchable = false, searchKeys = [], emptyMessag
   };
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       {searchable && (
         <div className="relative w-full max-w-md">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
@@ -56,7 +56,7 @@ function Table({ columns, data, searchable = false, searchKeys = [], emptyMessag
                   key={col.key}
                   onClick={() => col.sortable && handleSort(col.key)}
                   className={`
-                    px-5 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider
+                    px-5 py-3.5 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider
                     ${col.sortable ? "cursor-pointer hover:text-white select-none" : ""}
                   `}
                 >
@@ -75,7 +75,7 @@ function Table({ columns, data, searchable = false, searchKeys = [], emptyMessag
               <tr>
                 <td
                   colSpan={columns.length}
-                  className="px-5 py-14 text-center text-slate-500 text-sm"
+                  className="px-5 py-10 text-center text-slate-500 text-sm"
                 >
                   {emptyMessage}
                 </td>
@@ -87,7 +87,7 @@ function Table({ columns, data, searchable = false, searchKeys = [], emptyMessag
                   className="hover:bg-slate-800/40 transition-colors duration-150"
                 >
                   {columns.map((col) => (
-                    <td key={col.key} className="px-5 py-4 text-slate-300">
+                    <td key={col.key} className="px-5 py-3.5 text-slate-300">
                       {col.render ? col.render(row) : row[col.key] ?? "—"}
                     </td>
                   ))}
