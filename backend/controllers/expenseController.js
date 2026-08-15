@@ -45,7 +45,7 @@ const getExpenses = async (req, res) => {
 // Update Expense
 const updateExpense = async (req, res) => {
   try {
-    const expense = await Expense.findById(req.params.id);
+    const expense = await Expense.findOne({ _id: req.params.id, user: req.user.id });
 
     if (!expense) {
       return res.status(404).json({
@@ -53,8 +53,8 @@ const updateExpense = async (req, res) => {
       });
     }
 
-    const updatedExpense = await Expense.findByIdAndUpdate(
-      req.params.id,
+    const updatedExpense = await Expense.findOneAndUpdate(
+      { _id: req.params.id, user: req.user.id },
       req.body,
       { new: true }
     );
@@ -73,7 +73,7 @@ const updateExpense = async (req, res) => {
 // Delete Expense
 const deleteExpense = async (req, res) => {
   try {
-    const expense = await Expense.findById(req.params.id);
+    const expense = await Expense.findOne({ _id: req.params.id, user: req.user.id });
 
     if (!expense) {
       return res.status(404).json({
@@ -81,7 +81,7 @@ const deleteExpense = async (req, res) => {
       });
     }
 
-    await Expense.findByIdAndDelete(req.params.id);
+    await Expense.findOneAndDelete({ _id: req.params.id, user: req.user.id });
 
     res.status(200).json({
       message: "Expense deleted successfully",

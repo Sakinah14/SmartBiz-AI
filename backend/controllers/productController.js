@@ -37,7 +37,7 @@ const addProduct = async (req, res) => {
 
 const getProducts = async (req, res) => {
   try {
-    const products = await Product.find();
+    const products = await Product.find({ user: req.user.id });
 
     res.status(200).json(products);
 
@@ -51,7 +51,7 @@ const getProducts = async (req, res) => {
 // Update Product
 const updateProduct = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findOne({ _id: req.params.id, user: req.user.id });
 
     if (!product) {
       return res.status(404).json({
@@ -59,8 +59,8 @@ const updateProduct = async (req, res) => {
       });
     }
 
-    const updatedProduct = await Product.findByIdAndUpdate(
-      req.params.id,
+    const updatedProduct = await Product.findOneAndUpdate(
+      { _id: req.params.id, user: req.user.id },
       req.body,
       { new: true }
     );
@@ -79,7 +79,7 @@ const updateProduct = async (req, res) => {
 // Delete Product
 const deleteProduct = async (req, res) => {
   try {
-    const product = await Product.findById(req.params.id);
+    const product = await Product.findOne({ _id: req.params.id, user: req.user.id });
 
     if (!product) {
       return res.status(404).json({
@@ -87,7 +87,7 @@ const deleteProduct = async (req, res) => {
       });
     }
 
-    await Product.findByIdAndDelete(req.params.id);
+    await Product.findOneAndDelete({ _id: req.params.id, user: req.user.id });
 
     res.status(200).json({
       message: "Product deleted successfully",

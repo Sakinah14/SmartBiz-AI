@@ -7,7 +7,7 @@ const createOrder = async (req, res) => {
   try {
     const { customer, products, paymentMethod } = req.body;
 
-    const existingCustomer = await Customer.findById(customer);
+    const existingCustomer = await Customer.findOne({ _id: customer, owner: req.user.id });
     if (!existingCustomer) {
       return res.status(404).json({ message: "Customer not found" });
     }
@@ -15,7 +15,7 @@ const createOrder = async (req, res) => {
     let totalAmount = 0;
 
     for (const item of products) {
-      const product = await Product.findById(item.product);
+      const product = await Product.findOne({ _id: item.product, user: req.user.id });
       if (!product) {
         return res.status(404).json({ message: "Product not found" });
       }
@@ -27,14 +27,14 @@ const createOrder = async (req, res) => {
 
     // Reduce stock
     for (const item of products) {
-      const product = await Product.findById(item.product);
+      const product = await Product.findOne({ _id: item.product, user: req.user.id });
       product.quantity -= item.quantity;
       await product.save();
     }
 
     const orderProducts = await Promise.all(
       products.map(async (item) => {
-        const product = await Product.findById(item.product);
+        const product = await Product.findOne({ _id: item.product, user: req.user.id });
         return {
           product: item.product,
           quantity: item.quantity,
@@ -92,7 +92,7 @@ const updateOrderStatus = async (req, res) => {
       return res.status(400).json({ message: "Status is required" });
     }
 
-    const order = await Order.findById(req.params.id);
+    const order = await Order.findOne({ _id: req.params.id, owner: req.user.id });
 
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
@@ -114,13 +114,13 @@ const updateOrderStatus = async (req, res) => {
 // Delete Order
 const deleteOrder = async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id);
+    const order = await Order.findOne({ _id: req.params.id, owner: req.user.id });
 
     if (!order) {
       return res.status(404).json({ message: "Order not found" });
     }
 
-    await Order.findByIdAndDelete(req.params.id);
+    await Order.findOneAndDelete({ _id: req.params.id, owner: req.user.id });
 
     res.status(200).json({ message: "Order deleted successfully" });
   } catch (error) {

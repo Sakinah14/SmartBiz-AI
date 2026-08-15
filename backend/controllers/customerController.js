@@ -43,7 +43,7 @@ const getCustomers = async (req, res) => {
 // Update Customer
 const updateCustomer = async (req, res) => {
   try {
-    const customer = await Customer.findById(req.params.id);
+    const customer = await Customer.findOne({ _id: req.params.id, owner: req.user.id });
 
     if (!customer) {
       return res.status(404).json({
@@ -51,8 +51,8 @@ const updateCustomer = async (req, res) => {
       });
     }
 
-    const updatedCustomer = await Customer.findByIdAndUpdate(
-      req.params.id,
+    const updatedCustomer = await Customer.findOneAndUpdate(
+      { _id: req.params.id, owner: req.user.id },
       req.body,
       { new: true }
     );
@@ -71,7 +71,7 @@ const updateCustomer = async (req, res) => {
 // Delete Customer
 const deleteCustomer = async (req, res) => {
   try {
-    const customer = await Customer.findById(req.params.id);
+    const customer = await Customer.findOne({ _id: req.params.id, owner: req.user.id });
 
     if (!customer) {
       return res.status(404).json({
@@ -79,7 +79,7 @@ const deleteCustomer = async (req, res) => {
       });
     }
 
-    await Customer.findByIdAndDelete(req.params.id);
+    await Customer.findOneAndDelete({ _id: req.params.id, owner: req.user.id });
 
     res.status(200).json({
       message: "Customer deleted successfully",
