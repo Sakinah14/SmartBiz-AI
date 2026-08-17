@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Plus, Wallet, Pencil, Trash2, Tag } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
@@ -9,6 +10,7 @@ import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import Modal from "../components/ui/Modal";
 import Table from "../components/ui/Table";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
 
 const CATEGORIES = ["Rent", "Salary", "Utilities", "Electricity", "Internet", "Marketing", "Supplies", "Transport", "Other"];
 const emptyForm = { title: "", amount: "", category: "Other", date: "" };
@@ -32,6 +34,8 @@ function Expenses() {
   const [form, setForm] = useState(emptyForm);
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchExpenses = async () => {
     try {
@@ -60,22 +64,33 @@ function Expenses() {
     try {
       if (editId) {
         await api.put(`/expenses/${editId}`, form);
+        toast.success("Expense updated");
       } else {
         await api.post("/expenses", form);
+        toast.success("Expense added");
       }
       setIsModalOpen(false);
       fetchExpenses();
     } catch (err) {
-      alert(err.response?.data?.message || "Error saving expense");
+      toast.error(err.response?.data?.message || "Error saving expense");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm("Delete this expense?")) return;
-    await api.delete(`/expenses/${id}`);
-    fetchExpenses();
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/expenses/${deleteTarget._id}`);
+      toast.success("Expense deleted");
+      setDeleteTarget(null);
+      fetchExpenses();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Error deleting expense");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const totalExpenses = expenses.reduce((s, e) => s + (e.amount || 0), 0);
@@ -102,10 +117,10 @@ function Expenses() {
       key: "actions", label: "",
       render: (r) => (
         <div className="flex items-center gap-2">
-          <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all">
+          <button onClick={() => openEdit(r)} aria-label={`Edit ${r.title}`} className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all">
             <Pencil size={14} />
           </button>
-          <button onClick={() => handleDelete(r._id)} className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all">
+          <button onClick={() => setDeleteTarget(r)} aria-label={`Delete ${r.title}`} className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all">
             <Trash2 size={14} />
           </button>
         </div>
@@ -115,15 +130,17 @@ function Expenses() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-white">Expenses</h1>
-          <p className="text-slate-400 text-sm mt-1">Track and categorize your business costs</p>
+      <div className="@container w-full min-w-0">
+        <div className="flex flex-col @lg:flex-row @lg:items-center @lg:justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-black text-white truncate">Expenses</h1>
+            <p className="text-slate-400 text-sm mt-1">Track and categorize your business costs</p>
+          </div>
+          <Button onClick={openAdd} className="w-full @lg:w-auto flex-shrink-0">
+            <Plus size={16} />
+            Add Expense
+          </Button>
         </div>
-        <Button onClick={openAdd}>
-          <Plus size={16} />
-          Add Expense
-        </Button>
       </div>
 
       {/* Summary */}
@@ -209,8 +226,9 @@ function Expenses() {
             required
           />
           <div>
-            <label className="text-sm font-medium text-slate-300 block mb-1.5">Category</label>
+            <label htmlFor="expense-category" className="text-sm font-medium text-slate-300 block mb-1.5">Category</label>
             <select
+              id="expense-category"
               value={form.category}
               onChange={(e) => setForm({ ...form, category: e.target.value })}
               className="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-2.5 text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
@@ -232,6 +250,15 @@ function Expenses() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        loading={deleting}
+        title="Delete expense?"
+        description={deleteTarget ? `"${deleteTarget.title}" will be permanently removed.` : ""}
+      />
     </div>
   );
 }

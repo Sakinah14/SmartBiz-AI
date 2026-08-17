@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Plus, ShoppingCart, Trash2, ChevronDown } from "lucide-react";
 import api from "../services/api";
 import Card from "../components/ui/Card";
@@ -6,6 +7,7 @@ import Button from "../components/ui/Button";
 import Modal from "../components/ui/Modal";
 import Table from "../components/ui/Table";
 import Badge from "../components/ui/Badge";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
 
 function Orders() {
   const [orders, setOrders] = useState([]);
@@ -14,6 +16,8 @@ function Orders() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   // New order form
   const [selectedCustomer, setSelectedCustomer] = useState("");
@@ -75,7 +79,7 @@ function Orders() {
     }
 
     if (!selectedCustomer || finalItems.length === 0) {
-      alert("Please select a customer and select at least one product.");
+      toast.error("Please select a customer and select at least one product.");
       return;
     }
     setSaving(true);
@@ -85,6 +89,7 @@ function Orders() {
         products: finalItems.map((i) => ({ product: i.product, quantity: i.quantity })),
         paymentMethod,
       });
+      toast.success("Order created");
       setIsModalOpen(false);
       setOrderItems([]);
       setSelectedCustomer("");
@@ -93,7 +98,7 @@ function Orders() {
       setQuantity(1);
       fetchAll();
     } catch (err) {
-      alert(err.response?.data?.message || "Error creating order");
+      toast.error(err.response?.data?.message || "Error creating order");
     } finally {
       setSaving(false);
     }
@@ -102,16 +107,26 @@ function Orders() {
   const handleUpdateStatus = async (id, status) => {
     try {
       await api.put(`/orders/${id}`, { status });
+      toast.success(`Order marked ${status}`);
       fetchAll();
     } catch (err) {
-      alert(err.response?.data?.message || "Error updating status");
+      toast.error(err.response?.data?.message || "Error updating status");
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm("Delete this order?")) return;
-    await api.delete(`/orders/${id}`);
-    fetchAll();
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/orders/${deleteTarget._id}`);
+      toast.success("Order deleted");
+      setDeleteTarget(null);
+      fetchAll();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Error deleting order");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const totalItems = orderItems.reduce((s, i) => s + i.quantity * i.price, 0);
@@ -130,6 +145,7 @@ function Orders() {
             <select
               value={currentStatus}
               onChange={(e) => handleUpdateStatus(r._id, e.target.value)}
+              aria-label={`Change status for order #${r._id?.slice(-6)?.toUpperCase()}`}
               className="bg-slate-800/50 border border-slate-700/50 text-slate-300 text-xs rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-indigo-500 cursor-pointer"
             >
               {["Pending", "Processing", "Completed", "Delivered", "Cancelled"].map((s) => (
@@ -144,7 +160,11 @@ function Orders() {
     {
       key: "actions", label: "",
       render: (r) => (
-        <button onClick={() => handleDelete(r._id)} className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all">
+        <button
+          onClick={() => setDeleteTarget(r)}
+          aria-label={`Delete order #${r._id?.slice(-6)?.toUpperCase()}`}
+          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
+        >
           <Trash2 size={14} />
         </button>
       ),
@@ -163,15 +183,17 @@ function Orders() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-white">Orders</h1>
-          <p className="text-slate-400 text-sm mt-1">Track and manage all customer orders</p>
+      <div className="@container w-full min-w-0">
+        <div className="flex flex-col @lg:flex-row @lg:items-center @lg:justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-black text-white truncate">Orders</h1>
+            <p className="text-slate-400 text-sm mt-1">Track and manage all customer orders</p>
+          </div>
+          <Button onClick={() => setIsModalOpen(true)} className="w-full @lg:w-auto flex-shrink-0">
+            <Plus size={16} />
+            New Order
+          </Button>
         </div>
-        <Button onClick={() => setIsModalOpen(true)}>
-          <Plus size={16} />
-          New Order
-        </Button>
       </div>
 
       {/* Status summary */}
@@ -215,8 +237,9 @@ function Orders() {
         <form onSubmit={handleCreateOrder} className="space-y-4">
           {/* Customer */}
           <div>
-            <label className="text-sm font-medium text-slate-300 block mb-1.5">Customer *</label>
+            <label htmlFor="order-customer" className="text-sm font-medium text-slate-300 block mb-1.5">Customer *</label>
             <select
+              id="order-customer"
               value={selectedCustomer}
               onChange={(e) => setSelectedCustomer(e.target.value)}
               className="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-2.5 text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
@@ -234,6 +257,7 @@ function Orders() {
               <select
                 value={selectedProduct}
                 onChange={(e) => setSelectedProduct(e.target.value)}
+                aria-label="Select product to add"
                 className="flex-1 bg-slate-800/50 border border-slate-700/60 rounded-xl px-3 py-2 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
               >
                 <option value="">Select product</option>
@@ -244,9 +268,10 @@ function Orders() {
                 min="1"
                 value={quantity}
                 onChange={(e) => setQuantity(e.target.value)}
+                aria-label="Quantity"
                 className="w-20 bg-slate-800/50 border border-slate-700/60 rounded-xl px-3 py-2 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-center"
               />
-              <button type="button" onClick={addItem} className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-semibold transition-colors">
+              <button type="button" onClick={addItem} aria-label="Add product to order" className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-semibold transition-colors">
                 <Plus size={16} />
               </button>
             </div>
@@ -258,7 +283,14 @@ function Orders() {
                     <span className="text-slate-300">{item.name} × {item.quantity}</span>
                     <div className="flex items-center gap-3">
                       <span className="text-white font-semibold">₹{(item.price * item.quantity).toLocaleString()}</span>
-                      <button type="button" onClick={() => removeItem(item.product)} className="text-rose-400 hover:text-rose-300">×</button>
+                      <button
+                        type="button"
+                        onClick={() => removeItem(item.product)}
+                        aria-label={`Remove ${item.name} from order`}
+                        className="text-rose-400 hover:text-rose-300"
+                      >
+                        ×
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -272,8 +304,9 @@ function Orders() {
 
           {/* Payment */}
           <div>
-            <label className="text-sm font-medium text-slate-300 block mb-1.5">Payment Method</label>
+            <label htmlFor="order-payment-method" className="text-sm font-medium text-slate-300 block mb-1.5">Payment Method</label>
             <select
+              id="order-payment-method"
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
               className="w-full bg-slate-800/50 border border-slate-700/60 rounded-xl px-4 py-2.5 text-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
@@ -292,6 +325,15 @@ function Orders() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        loading={deleting}
+        title="Delete order?"
+        description={deleteTarget ? `Order #${deleteTarget._id?.slice(-6)?.toUpperCase()} will be permanently removed.` : ""}
+      />
     </div>
   );
 }

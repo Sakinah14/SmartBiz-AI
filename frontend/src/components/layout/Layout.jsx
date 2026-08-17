@@ -16,7 +16,7 @@ function Layout({ children }) {
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <Navbar onMenuToggle={() => setSidebarOpen((s) => !s)} />
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 lg:p-8 xl:p-10">
-          <div className="max-w-screen-2xl mx-auto w-full min-h-full flex flex-col space-y-8 lg:space-y-10">
+          <div className="max-w-screen-2xl mx-auto w-full space-y-8 lg:space-y-10">
             {children}
           </div>
         </main>

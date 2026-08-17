@@ -1,0 +1,312 @@
+{
+  "info": {
+    "name": "SmartBiz AI API",
+    "description": "REST API for SmartBiz AI — a business management app (products, customers, orders, expenses, reports, AI assistant, decision timeline). All routes except auth require a Bearer token, set automatically by the Login request into the `token` collection variable.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api" },
+    { "key": "token", "value": "" }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Demo Owner\",\n  \"email\": \"demo@smartbiz.ai\",\n  \"password\": \"Demo@12345\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const data = pm.response.json();",
+                  "if (data.token) { pm.collectionVariables.set('token', data.token); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"demo@smartbiz.ai\",\n  \"password\": \"Demo@12345\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/forgot-password",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"demo@smartbiz.ai\"\n}" }
+          }
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/reset-password",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"raw-token-from-email-link\",\n  \"newPassword\": \"NewPass@12345\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Profile",
+          "request": { "method": "GET", "url": "{{baseUrl}}/auth/profile" }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "List Products",
+          "request": { "method": "GET", "url": "{{baseUrl}}/products" }
+        },
+        {
+          "name": "Add Product",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/products",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Wireless Mouse\",\n  \"category\": \"Electronics\",\n  \"price\": 799,\n  \"quantity\": 50,\n  \"description\": \"Ergonomic wireless mouse\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/products/:id",
+            "variable": [{ "key": "id", "value": "" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Wireless Mouse\",\n  \"category\": \"Electronics\",\n  \"price\": 899,\n  \"quantity\": 40\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/products/:id",
+            "variable": [{ "key": "id", "value": "" }]
+          }
+        },
+        {
+          "name": "Import Products (CSV)",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/products/import",
+            "body": {
+              "mode": "formdata",
+              "formdata": [{ "key": "file", "type": "file", "src": [] }]
+            },
+            "description": "CSV columns: name, category, price, quantity, description (optional). Max 500 rows, 2MB."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Customers",
+      "item": [
+        {
+          "name": "List Customers",
+          "request": { "method": "GET", "url": "{{baseUrl}}/customers" }
+        },
+        {
+          "name": "Add Customer",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/customers",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ananya Rao\",\n  \"phone\": \"9876543210\",\n  \"email\": \"ananya@example.com\",\n  \"address\": \"Bengaluru, KA\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Customer",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/customers/:id",
+            "variable": [{ "key": "id", "value": "" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ananya Rao\",\n  \"phone\": \"9876543210\",\n  \"email\": \"ananya@example.com\",\n  \"address\": \"Bengaluru, KA\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Customer",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/customers/:id",
+            "variable": [{ "key": "id", "value": "" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "List Orders",
+          "request": { "method": "GET", "url": "{{baseUrl}}/orders" }
+        },
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/orders",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer\": \"<customer-id>\",\n  \"products\": [{ \"product\": \"<product-id>\", \"quantity\": 2 }],\n  \"paymentMethod\": \"Cash\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Order Status",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/orders/:id",
+            "variable": [{ "key": "id", "value": "" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"Completed\"\n}" }
+          }
+        },
+        {
+          "name": "Delete Order",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/orders/:id",
+            "variable": [{ "key": "id", "value": "" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Expenses",
+      "item": [
+        {
+          "name": "List Expenses",
+          "request": { "method": "GET", "url": "{{baseUrl}}/expenses" }
+        },
+        {
+          "name": "Add Expense",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/expenses",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Office Rent\",\n  \"category\": \"Rent\",\n  \"amount\": 25000,\n  \"date\": \"2026-08-01\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update Expense",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/expenses/:id",
+            "variable": [{ "key": "id", "value": "" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Office Rent\",\n  \"category\": \"Rent\",\n  \"amount\": 26000,\n  \"date\": \"2026-08-01\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete Expense",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/expenses/:id",
+            "variable": [{ "key": "id", "value": "" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Dashboard & Reports",
+      "item": [
+        {
+          "name": "Get Dashboard",
+          "request": { "method": "GET", "url": "{{baseUrl}}/dashboard" }
+        },
+        {
+          "name": "Get Report",
+          "request": { "method": "GET", "url": "{{baseUrl}}/reports" }
+        }
+      ]
+    },
+    {
+      "name": "Decision Timeline",
+      "item": [
+        {
+          "name": "Get Timeline",
+          "request": { "method": "GET", "url": "{{baseUrl}}/decision-events" }
+        },
+        {
+          "name": "Update Event Status",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/decision-events/:id",
+            "variable": [{ "key": "id", "value": "" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"done\"\n}"
+            },
+            "description": "status: open | snoozed | done | ignored. snoozeUntil (ISO date) is required when status is \"snoozed\"."
+          }
+        }
+      ]
+    },
+    {
+      "name": "AI Assistant",
+      "item": [
+        {
+          "name": "Chat",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/ai/chat",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"What are my top selling products this month?\"\n}"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

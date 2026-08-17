@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import {
-  TrendingUp, ShoppingCart, Users, Package, DollarSign, Bot, ArrowRight, Sparkles
+  TrendingUp, ShoppingCart, Users, Package, DollarSign, Bot, ArrowRight, Sparkles,
+  AlertTriangle, PackageX, CheckCircle2
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -12,15 +13,11 @@ import StatCard from "../components/ui/StatCard";
 import Card from "../components/ui/Card";
 import Badge from "../components/ui/Badge";
 import { useTheme } from "../context/ThemeContext";
+import { getMonthlySeries, computeTrend } from "../utils/analytics";
 
-const revenueData = [
-  { month: "Feb", revenue: 42000, expenses: 18000 },
-  { month: "Mar", revenue: 55000, expenses: 22000 },
-  { month: "Apr", revenue: 38000, expenses: 15000 },
-  { month: "May", revenue: 71000, expenses: 28000 },
-  { month: "Jun", revenue: 63000, expenses: 24000 },
-  { month: "Jul", revenue: 84000, expenses: 30000 },
-];
+const ACTION_LOW_STOCK_THRESHOLD = 5;
+const ACTION_ITEMS_LIMIT = 5;
+const ACTION_NEEDS_ATTENTION_STATUSES = ["pending", "processing"];
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -48,6 +45,13 @@ function Dashboard() {
   const [recentOrders, setRecentOrders] = useState([]);
   const [aiInsight, setAiInsight] = useState("");
   const [loadingInsight, setLoadingInsight] = useState(false);
+
+  const [actionProducts, setActionProducts] = useState([]);
+  const [actionOrders, setActionOrders] = useState([]);
+  const [actionCustomers, setActionCustomers] = useState([]);
+  const [actionExpenses, setActionExpenses] = useState([]);
+  const [actionLoading, setActionLoading] = useState(true);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -66,6 +70,29 @@ function Dashboard() {
     fetchAll();
   }, []);
 
+  useEffect(() => {
+    const fetchActionCenterData = async () => {
+      try {
+        setActionLoading(true);
+        const [productsRes, ordersRes, customersRes, expensesRes] = await Promise.all([
+          api.get("/products"),
+          api.get("/orders"),
+          api.get("/customers"),
+          api.get("/expenses"),
+        ]);
+        setActionProducts(productsRes.data || []);
+        setActionOrders(ordersRes.data || []);
+        setActionCustomers(customersRes.data || []);
+        setActionExpenses(expensesRes.data || []);
+      } catch (err) {
+        console.error("Action Center fetch error:", err);
+      } finally {
+        setActionLoading(false);
+      }
+    };
+    fetchActionCenterData();
+  }, []);
+
   const fetchAIInsight = async () => {
     setLoadingInsight(true);
     try {
@@ -82,6 +109,76 @@ function Dashboard() {
 
   const chartTickColor = isDark ? "#94a3b8" : "#475569";
   const gridColor = isDark ? "rgba(148,163,184,0.07)" : "rgba(203,213,225,0.6)";
+
+  // ── Today's Action Center — low/out-of-stock products + orders needing attention ──
+  const outOfStockProducts = actionProducts.filter((p) => p.quantity === 0);
+  const lowStockProducts = actionProducts.filter((p) => p.quantity > 0 && p.quantity <= ACTION_LOW_STOCK_THRESHOLD);
+  const attentionOrders = actionOrders.filter((o) =>
+    ACTION_NEEDS_ATTENTION_STATUSES.includes((o.status || o.orderStatus || "Pending").toLowerCase())
+  );
+
+  const productActionItems = [
+    ...outOfStockProducts.map((p) => ({
+      key: `out-${p._id}`,
+      kind: "product",
+      path: "/products",
+      icon: PackageX,
+      iconBg: "bg-rose-500/15",
+      iconColor: "text-rose-400",
+      label: p.name,
+      sub: "Out of stock",
+    })),
+    ...lowStockProducts.map((p) => ({
+      key: `low-${p._id}`,
+      kind: "product",
+      path: "/products",
+      icon: AlertTriangle,
+      iconBg: "bg-amber-500/15",
+      iconColor: "text-amber-400",
+      label: p.name,
+      sub: `${p.quantity} unit${p.quantity !== 1 ? "s" : ""} left`,
+    })),
+  ];
+
+  const orderActionItems = attentionOrders.map((o) => ({
+    key: `order-${o._id}`,
+    kind: "order",
+    path: "/orders",
+    icon: ShoppingCart,
+    iconBg: "bg-indigo-500/15",
+    iconColor: "text-indigo-400",
+    label: o.customer?.name || "Unknown customer",
+    sub: o.status || o.orderStatus || "Pending",
+  }));
+
+  const allActionItems = [...productActionItems, ...orderActionItems];
+  const displayedActionItems = allActionItems.slice(0, ACTION_ITEMS_LIMIT);
+  const shownProductCount = displayedActionItems.filter((i) => i.kind === "product").length;
+  const shownOrderCount = displayedActionItems.filter((i) => i.kind === "order").length;
+  const showViewAllProducts = productActionItems.length > shownProductCount;
+  const showViewAllOrders = orderActionItems.length > shownOrderCount;
+
+  // ── Real monthly trend data (replaces hardcoded sample data) ──
+  const monthlySeries = getMonthlySeries(actionOrders, actionExpenses, 6);
+
+  const now = new Date();
+  const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  const inRange = (dateStr, start, end) => {
+    if (!dateStr) return false;
+    const d = new Date(dateStr);
+    return d >= start && (!end || d < end);
+  };
+
+  const thisMonthOrders = actionOrders.filter((o) => inRange(o.createdAt, thisMonthStart));
+  const lastMonthOrders = actionOrders.filter((o) => inRange(o.createdAt, lastMonthStart, thisMonthStart));
+  const sumRevenue = (list) => list.reduce((s, o) => s + (o.totalAmount || 0), 0);
+  const revenueTrend = computeTrend(sumRevenue(thisMonthOrders), sumRevenue(lastMonthOrders));
+  const orderCountTrend = computeTrend(thisMonthOrders.length, lastMonthOrders.length);
+
+  const thisMonthCustomers = actionCustomers.filter((c) => inRange(c.createdAt, thisMonthStart));
+  const lastMonthCustomers = actionCustomers.filter((c) => inRange(c.createdAt, lastMonthStart, thisMonthStart));
+  const customerGrowthTrend = computeTrend(thisMonthCustomers.length, lastMonthCustomers.length);
 
   return (
     <div className="space-y-12 lg:space-y-14 animate-fade-in pb-12">
@@ -103,12 +200,95 @@ function Dashboard() {
 
       {/* ── Stat Cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 lg:gap-8">
-        <StatCard title="Total Revenue" value={`₹${stats.totalRevenue?.toLocaleString()}`} icon={DollarSign} color="indigo" trend="up" trendValue="+12.5%" />
-        <StatCard title="Total Orders" value={stats.totalOrders} icon={ShoppingCart} color="cyan" trend="up" trendValue="+8.2%" />
-        <StatCard title="Customers" value={stats.totalCustomers} icon={Users} color="emerald" trend="up" trendValue="+5.1%" />
+        <StatCard title="Total Revenue" value={`₹${stats.totalRevenue?.toLocaleString()}`} icon={DollarSign} color="indigo" trend={revenueTrend.trend} trendValue={revenueTrend.trendValue} />
+        <StatCard title="Total Orders" value={stats.totalOrders} icon={ShoppingCart} color="cyan" trend={orderCountTrend.trend} trendValue={orderCountTrend.trendValue} />
+        <StatCard title="Customers" value={stats.totalCustomers} icon={Users} color="emerald" trend={customerGrowthTrend.trend} trendValue={customerGrowthTrend.trendValue} />
         <StatCard title="Products" value={stats.totalProducts} icon={Package} color="amber" />
         <StatCard title="Net Profit" value={`₹${stats.profit?.toLocaleString()}`} icon={TrendingUp} color={stats.profit >= 0 ? "emerald" : "rose"} />
       </div>
+
+      {/* ── Today's Action Center ── */}
+      <Card className="!p-6 lg:!p-8 rounded-3xl">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-bold text-white tracking-tight">Today&rsquo;s Action Center</h2>
+            <p className="text-xs lg:text-sm text-slate-400 mt-1 font-medium">Items that need your attention</p>
+          </div>
+          {allActionItems.length > 0 && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 flex-shrink-0">
+              <AlertTriangle size={13} className="text-amber-500" />
+              <span className="text-xs font-bold text-amber-500">{allActionItems.length}</span>
+            </div>
+          )}
+        </div>
+
+        {actionLoading ? (
+          <div className="flex items-center justify-center py-10">
+            <div className="w-7 h-7 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
+          </div>
+        ) : displayedActionItems.length === 0 ? (
+          <div className="text-center py-10 text-slate-500">
+            <CheckCircle2 size={36} className="mx-auto mb-3 text-emerald-500 opacity-80" />
+            <p className="text-sm font-semibold text-slate-300">You&rsquo;re all caught up.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {displayedActionItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <div
+                  key={item.key}
+                  onClick={() => navigate(item.path)}
+                  role="button"
+                  tabIndex={0}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "12px 16px",
+                    borderRadius: "16px",
+                    cursor: "pointer",
+                    background: isDark ? "rgba(15,23,42,0.6)" : "#f8fafc",
+                    border: isDark ? "1px solid rgba(30,41,59,0.8)" : "1px solid #e2e8f0",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`p-2 rounded-xl flex-shrink-0 ${item.iconBg}`}>
+                      <Icon size={15} className={item.iconColor} />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-white truncate">{item.label}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">{item.sub}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {(showViewAllProducts || showViewAllOrders) && (
+              <div className="flex flex-wrap gap-x-5 gap-y-2 pt-1">
+                {showViewAllProducts && (
+                  <button
+                    onClick={() => navigate("/products")}
+                    className="flex items-center gap-1.5 text-xs font-bold text-indigo-500 hover:text-indigo-600 transition-all"
+                  >
+                    View all Products <ArrowRight size={12} />
+                  </button>
+                )}
+                {showViewAllOrders && (
+                  <button
+                    onClick={() => navigate("/orders")}
+                    className="flex items-center gap-1.5 text-xs font-bold text-indigo-500 hover:text-indigo-600 transition-all"
+                  >
+                    View all Orders <ArrowRight size={12} />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </Card>
 
       {/* ── Charts Row ── */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 lg:gap-10">
@@ -131,7 +311,7 @@ function Dashboard() {
             </div>
           </div>
           <ResponsiveContainer width="100%" height={300}>
-            <AreaChart data={revenueData} margin={{ left: 10, right: 10, top: 10 }}>
+            <AreaChart data={monthlySeries} margin={{ left: 10, right: 10, top: 10 }}>
               <defs>
                 <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4} />
@@ -159,7 +339,7 @@ function Dashboard() {
             <p className="text-xs lg:text-sm text-slate-400 mt-1 font-medium">6-month expense distribution</p>
           </div>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={revenueData} barSize={24} margin={{ left: 0, right: 8, top: 10 }}>
+            <BarChart data={monthlySeries} barSize={24} margin={{ left: 0, right: 8, top: 10 }}>
               <defs>
                 <linearGradient id="roseBarGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.9} />

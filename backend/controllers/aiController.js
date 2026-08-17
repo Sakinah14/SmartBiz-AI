@@ -53,8 +53,8 @@ User: ${message}
       const result = await model.generateContent(businessContext);
       responseText = result.response.text();
     } catch (modelErr) {
-      console.warn("gemini-flash-latest failed, trying gemini-2.0-flash-lite:", modelErr.message);
-      const fallbackModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+      console.warn("gemini-flash-latest failed, trying gemini-flash-lite-latest:", modelErr.message);
+      const fallbackModel = genAI.getGenerativeModel({ model: "gemini-flash-lite-latest" });
       const result = await fallbackModel.generateContent(businessContext);
       responseText = result.response.text();
     }

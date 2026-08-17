@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
-import { Plus, Package, Pencil, Trash2, ImagePlus, X } from "lucide-react";
+import { toast } from "sonner";
+import { Plus, Package, Pencil, Trash2, ImagePlus, X, FileUp } from "lucide-react";
 import api from "../services/api";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -7,6 +8,7 @@ import Input from "../components/ui/Input";
 import Modal from "../components/ui/Modal";
 import Table from "../components/ui/Table";
 import Badge from "../components/ui/Badge";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
 
 const emptyForm = { name: "", price: "", quantity: "", category: "", description: "", imageUrl: "" };
 
@@ -18,7 +20,11 @@ function Products() {
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [imagePreview, setImagePreview] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [importing, setImporting] = useState(false);
   const fileInputRef = useRef(null);
+  const csvInputRef = useRef(null);
 
   const fetchProducts = async () => {
     try {
@@ -60,7 +66,7 @@ function Products() {
     const file = e.target.files[0];
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      alert("Image must be under 2MB.");
+      toast.error("Image must be under 2MB.");
       return;
     }
     const reader = new FileReader();
@@ -83,22 +89,57 @@ function Products() {
     try {
       if (editId) {
         await api.put(`/products/${editId}`, form);
+        toast.success("Product updated");
       } else {
         await api.post("/products", form);
+        toast.success("Product added");
       }
       setIsModalOpen(false);
       fetchProducts();
     } catch (err) {
-      alert(err.response?.data?.message || "Error saving product");
+      toast.error(err.response?.data?.message || "Error saving product");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm("Delete this product?")) return;
-    await api.delete(`/products/${id}`);
-    fetchProducts();
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/products/${deleteTarget._id}`);
+      toast.success("Product deleted");
+      setDeleteTarget(null);
+      fetchProducts();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Error deleting product");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleImportFile = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const { data } = await api.post("/products/import", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      if (data.skipped > 0) {
+        toast.warning(`Imported ${data.imported}, skipped ${data.skipped}${data.errors?.[0] ? ` — ${data.errors[0]}` : ""}`);
+      } else {
+        toast.success(data.message);
+      }
+      fetchProducts();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Import failed");
+    } finally {
+      setImporting(false);
+      if (csvInputRef.current) csvInputRef.current.value = "";
+    }
   };
 
   const columns = [
@@ -159,10 +200,10 @@ function Products() {
       label: "Actions",
       render: (r) => (
         <div className="flex items-center gap-2">
-          <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all">
+          <button onClick={() => openEdit(r)} aria-label={`Edit ${r.name}`} className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all">
             <Pencil size={14} />
           </button>
-          <button onClick={() => handleDelete(r._id)} className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all">
+          <button onClick={() => setDeleteTarget(r)} aria-label={`Delete ${r.name}`} className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all">
             <Trash2 size={14} />
           </button>
         </div>
@@ -172,15 +213,36 @@ function Products() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-white">Products</h1>
-          <p className="text-slate-400 text-sm mt-1">Manage your product inventory</p>
+      <div className="@container w-full min-w-0">
+        <div className="flex flex-col @lg:flex-row @lg:items-center @lg:justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-black text-white truncate">Products</h1>
+            <p className="text-slate-400 text-sm mt-1">Manage your product inventory</p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2 w-full @lg:w-auto">
+            <Button
+              variant="outline"
+              onClick={() => csvInputRef.current?.click()}
+              loading={importing}
+              className="w-full @lg:w-auto flex-shrink-0"
+              title="Import products from a CSV file (columns: name, category, price, quantity, description)"
+            >
+              <FileUp size={16} />
+              Import CSV
+            </Button>
+            <input
+              ref={csvInputRef}
+              type="file"
+              accept=".csv,text/csv"
+              onChange={handleImportFile}
+              style={{ display: "none" }}
+            />
+            <Button onClick={openAdd} className="w-full @lg:w-auto flex-shrink-0">
+              <Plus size={16} />
+              Add Product
+            </Button>
+          </div>
         </div>
-        <Button onClick={openAdd}>
-          <Plus size={16} />
-          Add Product
-        </Button>
       </div>
 
       {/* Summary Cards */}
@@ -255,6 +317,7 @@ function Products() {
                 <button
                   type="button"
                   onClick={clearImage}
+                  aria-label="Remove uploaded image"
                   style={{
                     position: "absolute",
                     top: "8px",
@@ -379,6 +442,15 @@ function Products() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        loading={deleting}
+        title="Delete product?"
+        description={deleteTarget ? `"${deleteTarget.name}" will be permanently removed.` : ""}
+      />
     </div>
   );
 }

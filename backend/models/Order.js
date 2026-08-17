@@ -6,6 +6,7 @@ const orderSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
+      index: true,
     },
 
     customer: {
@@ -64,5 +65,8 @@ const orderSchema = new mongoose.Schema(
     timestamps: true,
   }
 );
+
+// Recent-orders-for-this-owner is the app's most common Order query.
+orderSchema.index({ owner: 1, createdAt: -1 });
 
 module.exports = mongoose.model("Order", orderSchema);

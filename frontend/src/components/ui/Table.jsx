@@ -55,9 +55,18 @@ function Table({ columns, data, searchable = false, searchKeys = [], emptyMessag
                 <th
                   key={col.key}
                   onClick={() => col.sortable && handleSort(col.key)}
+                  onKeyDown={(e) => {
+                    if (col.sortable && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      handleSort(col.key);
+                    }
+                  }}
+                  tabIndex={col.sortable ? 0 : undefined}
+                  role={col.sortable ? "button" : undefined}
+                  aria-sort={col.sortable && sortCol === col.key ? (sortDir === "asc" ? "ascending" : "descending") : undefined}
                   className={`
                     px-5 py-3.5 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider
-                    ${col.sortable ? "cursor-pointer hover:text-white select-none" : ""}
+                    ${col.sortable ? "cursor-pointer hover:text-white select-none focus:outline-none focus:text-white focus:ring-1 focus:ring-inset focus:ring-indigo-500/50" : ""}
                   `}
                 >
                   <div className="flex items-center gap-1.5">

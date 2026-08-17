@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Plus, Users, Pencil, Trash2, Mail, Phone, MapPin } from "lucide-react";
 import api from "../services/api";
 import Card from "../components/ui/Card";
@@ -6,6 +7,7 @@ import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import Modal from "../components/ui/Modal";
 import Table from "../components/ui/Table";
+import ConfirmDialog from "../components/ui/ConfirmDialog";
 
 const emptyForm = { name: "", email: "", phone: "", address: "" };
 
@@ -16,6 +18,8 @@ function Customers() {
   const [form, setForm] = useState(emptyForm);
   const [editId, setEditId] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchCustomers = async () => {
     try {
@@ -44,22 +48,33 @@ function Customers() {
     try {
       if (editId) {
         await api.put(`/customers/${editId}`, form);
+        toast.success("Customer updated");
       } else {
         await api.post("/customers", form);
+        toast.success("Customer added");
       }
       setIsModalOpen(false);
       fetchCustomers();
     } catch (err) {
-      alert(err.response?.data?.message || "Error saving customer");
+      toast.error(err.response?.data?.message || "Error saving customer");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm("Delete this customer?")) return;
-    await api.delete(`/customers/${id}`);
-    fetchCustomers();
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/customers/${deleteTarget._id}`);
+      toast.success("Customer deleted");
+      setDeleteTarget(null);
+      fetchCustomers();
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Error deleting customer");
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const columns = [
@@ -81,10 +96,10 @@ function Customers() {
       key: "actions", label: "Actions",
       render: (r) => (
         <div className="flex items-center gap-2">
-          <button onClick={() => openEdit(r)} className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all">
+          <button onClick={() => openEdit(r)} aria-label={`Edit ${r.name}`} className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all">
             <Pencil size={14} />
           </button>
-          <button onClick={() => handleDelete(r._id)} className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all">
+          <button onClick={() => setDeleteTarget(r)} aria-label={`Delete ${r.name}`} className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all">
             <Trash2 size={14} />
           </button>
         </div>
@@ -94,15 +109,17 @@ function Customers() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-white">Customers</h1>
-          <p className="text-slate-400 text-sm mt-0.5">Manage your customer relationships</p>
+      <div className="@container w-full min-w-0">
+        <div className="flex flex-col @lg:flex-row @lg:items-center @lg:justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-black text-white truncate">Customers</h1>
+            <p className="text-slate-400 text-sm mt-0.5">Manage your customer relationships</p>
+          </div>
+          <Button onClick={openAdd} className="w-full @lg:w-auto flex-shrink-0">
+            <Plus size={16} />
+            Add Customer
+          </Button>
         </div>
-        <Button onClick={openAdd}>
-          <Plus size={16} />
-          Add Customer
-        </Button>
       </div>
 
       {/* Total count card */}
@@ -176,6 +193,15 @@ function Customers() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+        loading={deleting}
+        title="Delete customer?"
+        description={deleteTarget ? `"${deleteTarget.name}" will be permanently removed.` : ""}
+      />
     </div>
   );
 }

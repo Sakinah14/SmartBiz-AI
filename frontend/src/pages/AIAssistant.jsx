@@ -35,6 +35,8 @@ function AIAssistant() {
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
 
+  const hasConversation = messages.length > 1;
+
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
@@ -83,8 +85,44 @@ function AIAssistant() {
       .replace(/\n/g, "<br/>");
   };
 
+  const composerHint = (
+    <p className="text-[11px] text-slate-500 font-medium mt-2.5 text-center">
+      Press <kbd className="px-1.5 py-0.5 bg-slate-800 rounded text-slate-400 font-mono border border-slate-700">Enter</kbd> to send · <kbd className="px-1.5 py-0.5 bg-slate-800 rounded text-slate-400 font-mono border border-slate-700">Shift+Enter</kbd> for new line
+    </p>
+  );
+
+  const composer = (
+    <div className="flex items-center gap-4">
+      <div className="flex-1 relative min-w-0">
+        <textarea
+          ref={inputRef}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder="Ask smart insights about revenue, customers, orders, inventory..."
+          rows={1}
+          disabled={loading}
+          className="w-full bg-slate-950/70 border border-slate-700/60 rounded-2xl px-5 py-3.5 pr-4 text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all resize-none disabled:opacity-50"
+          style={{ minHeight: "52px", maxHeight: "140px" }}
+        />
+      </div>
+      <button
+        onClick={() => sendMessage()}
+        disabled={loading || !input.trim()}
+        aria-label="Send message"
+        className="p-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-cyan-600 text-white shadow-xl shadow-indigo-500/25 hover:opacity-95 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0 border border-indigo-400/20"
+      >
+        {loading ? (
+          <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+        ) : (
+          <Send size={20} />
+        )}
+      </button>
+    </div>
+  );
+
   return (
-    <div className="flex flex-col gap-6 flex-1 min-h-0">
+    <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 flex-shrink-0">
         <div className="min-w-0">
@@ -101,63 +139,86 @@ function AIAssistant() {
         </div>
       </div>
 
-      {/* Chat Card Area */}
-      <div className="flex flex-col flex-1 glass-card rounded-3xl border border-slate-700/60 overflow-hidden min-h-0 shadow-2xl">
-        {/* Messages list */}
-        <div className="flex-1 overflow-y-auto p-6 lg:p-8 space-y-6">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex items-start gap-4 animate-fade-in-up ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
-            >
-              {/* Avatar */}
-              <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg ${
-                msg.role === "user"
-                  ? "bg-gradient-to-br from-indigo-500 to-violet-600 shadow-indigo-500/25 border border-indigo-400/20"
-                  : "bg-gradient-to-br from-violet-600 to-cyan-600 shadow-violet-500/25 border border-violet-400/20"
-              }`}>
-                {msg.role === "user" ? (
-                  <User size={18} className="text-white" />
-                ) : (
-                  <Bot size={18} className="text-white" />
-                )}
-              </div>
-
-              {/* Bubble */}
-              <div className={`max-w-[80%] ${msg.role === "user" ? "items-end" : "items-start"} flex flex-col gap-1.5`}>
-                <div className={`px-5 py-4 text-sm leading-relaxed ${
+      {hasConversation ? (
+        /* ── Active conversation: bounded, internally scrollable chat panel ── */
+        <div className="flex flex-col glass-card rounded-3xl border border-slate-700/60 overflow-hidden shadow-2xl h-[min(70vh,640px)]">
+          <div className="flex-1 overflow-y-auto p-6 lg:p-8 space-y-6">
+            {messages.map((msg) => (
+              <div
+                key={msg.id}
+                className={`flex items-start gap-4 animate-fade-in-up ${msg.role === "user" ? "flex-row-reverse" : "flex-row"}`}
+              >
+                {/* Avatar */}
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-lg ${
                   msg.role === "user"
-                    ? "chat-bubble-user text-white font-medium"
-                    : `chat-bubble-ai text-slate-200 ${msg.isError ? "border-rose-500/40 bg-rose-500/10 text-rose-300" : ""}`
+                    ? "bg-gradient-to-br from-indigo-500 to-violet-600 shadow-indigo-500/25 border border-indigo-400/20"
+                    : "bg-gradient-to-br from-violet-600 to-cyan-600 shadow-violet-500/25 border border-violet-400/20"
                 }`}>
-                  <p dangerouslySetInnerHTML={{ __html: formatText(msg.text) }} />
+                  {msg.role === "user" ? (
+                    <User size={18} className="text-white" />
+                  ) : (
+                    <Bot size={18} className="text-white" />
+                  )}
                 </div>
-                <span className="text-[11px] text-slate-500 font-medium px-2">
-                  {msg.time.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
-                </span>
-              </div>
-            </div>
-          ))}
 
-          {loading && (
-            <div className="flex items-start gap-4 animate-fade-in">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-600 to-cyan-600 flex items-center justify-center shadow-lg shadow-violet-500/25 border border-violet-400/20">
+                {/* Bubble */}
+                <div className={`max-w-[80%] ${msg.role === "user" ? "items-end" : "items-start"} flex flex-col gap-1.5`}>
+                  <div className={`px-5 py-4 text-sm leading-relaxed ${
+                    msg.role === "user"
+                      ? "chat-bubble-user text-white font-medium"
+                      : `chat-bubble-ai text-slate-200 ${msg.isError ? "border-rose-500/40 bg-rose-500/10 text-rose-300" : ""}`
+                  }`}>
+                    <p dangerouslySetInnerHTML={{ __html: formatText(msg.text) }} />
+                  </div>
+                  <span className="text-[11px] text-slate-500 font-medium px-2">
+                    {msg.time.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                </div>
+              </div>
+            ))}
+
+            {loading && (
+              <div className="flex items-start gap-4 animate-fade-in">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-600 to-cyan-600 flex items-center justify-center shadow-lg shadow-violet-500/25 border border-violet-400/20">
+                  <Bot size={18} className="text-white" />
+                </div>
+                <div className="chat-bubble-ai rounded-2xl">
+                  <TypingIndicator />
+                </div>
+              </div>
+            )}
+
+            <div ref={bottomRef} />
+          </div>
+
+          {/* Input Bar */}
+          <div className="p-5 lg:p-6 border-t border-slate-800/80 bg-slate-900/50 flex-shrink-0">
+            {composer}
+            {composerHint}
+          </div>
+        </div>
+      ) : (
+        /* ── Empty / welcome state: compact, naturally sized workspace ── */
+        <div className="max-w-3xl w-full mx-auto flex flex-col gap-6">
+          {/* Welcome card */}
+          <div className="glass-card rounded-3xl border border-slate-700/60 p-6 lg:p-8 shadow-xl">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-violet-600 to-cyan-600 flex items-center justify-center flex-shrink-0 shadow-lg shadow-violet-500/25 border border-violet-400/20">
                 <Bot size={18} className="text-white" />
               </div>
-              <div className="chat-bubble-ai rounded-2xl">
-                <TypingIndicator />
+              <div className="min-w-0">
+                <p
+                  className="text-sm text-slate-200 leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: formatText(messages[0].text) }}
+                />
               </div>
             </div>
-          )}
+          </div>
 
-          <div ref={bottomRef} />
-        </div>
-
-        {/* Suggested Prompts */}
-        {messages.length <= 1 && (
-          <div className="px-6 lg:px-8 pb-4 flex-shrink-0">
+          {/* Recommended questions */}
+          <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">✨ Recommended Questions</p>
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               {SUGGESTED_PROMPTS.map((prompt, i) => {
                 const Icon = prompt.icon;
                 return (
@@ -177,41 +238,14 @@ function AIAssistant() {
               })}
             </div>
           </div>
-        )}
 
-        {/* Input Bar */}
-        <div className="p-5 lg:p-6 border-t border-slate-800/80 bg-slate-900/50 flex-shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="flex-1 relative">
-              <textarea
-                ref={inputRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Ask smart insights about revenue, customers, orders, inventory..."
-                rows={1}
-                disabled={loading}
-                className="w-full bg-slate-950/70 border border-slate-700/60 rounded-2xl px-5 py-3.5 pr-4 text-slate-100 placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition-all resize-none disabled:opacity-50"
-                style={{ minHeight: "52px", maxHeight: "140px" }}
-              />
-            </div>
-            <button
-              onClick={() => sendMessage()}
-              disabled={loading || !input.trim()}
-              className="p-3.5 rounded-2xl bg-gradient-to-r from-indigo-600 via-violet-600 to-cyan-600 text-white shadow-xl shadow-indigo-500/25 hover:opacity-95 transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:active:scale-100 flex-shrink-0 border border-indigo-400/20"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <Send size={20} />
-              )}
-            </button>
+          {/* Input composer */}
+          <div className="glass-card rounded-3xl border border-slate-700/60 p-4 lg:p-5">
+            {composer}
+            {composerHint}
           </div>
-          <p className="text-[11px] text-slate-500 font-medium mt-2.5 text-center">
-            Press <kbd className="px-1.5 py-0.5 bg-slate-800 rounded text-slate-400 font-mono border border-slate-700">Enter</kbd> to send · <kbd className="px-1.5 py-0.5 bg-slate-800 rounded text-slate-400 font-mono border border-slate-700">Shift+Enter</kbd> for new line
-          </p>
         </div>
-      </div>
+      )}
     </div>
   );
 }

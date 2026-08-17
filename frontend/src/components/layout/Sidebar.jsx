@@ -6,6 +6,7 @@ import {
   ShoppingCart,
   Wallet,
   BarChart3,
+  History,
   Bot,
   LogOut,
   Zap,
@@ -20,6 +21,7 @@ const menuItems = [
   { name: "Orders", path: "/orders", icon: ShoppingCart },
   { name: "Expenses", path: "/expenses", icon: Wallet },
   { name: "Reports", path: "/reports", icon: BarChart3 },
+  { name: "Timeline", path: "/decision-timeline", icon: History },
   { name: "AI Assistant", path: "/ai-assistant", icon: Bot },
 ];
 

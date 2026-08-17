@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
 function Input({
@@ -14,6 +14,8 @@ function Input({
   id,
   ...props
 }) {
+  const generatedId = useId();
+  const inputId = id || generatedId;
   const [showPassword, setShowPassword] = useState(false);
   const isPasswordType = type === "password";
   const actualType = isPasswordType ? (showPassword ? "text" : "password") : type;
@@ -22,7 +24,7 @@ function Input({
     <div className={`flex flex-col gap-1.5 ${className}`}>
       {label && (
         <label
-          htmlFor={id}
+          htmlFor={inputId}
           className="text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-slate-400 light:text-slate-600"
           style={{ marginBottom: "2px" }}
         >
@@ -40,7 +42,7 @@ function Input({
           </div>
         )}
         <input
-          id={id}
+          id={inputId}
           type={actualType}
           placeholder={placeholder}
           value={value}
@@ -68,6 +70,7 @@ function Input({
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
             className="absolute right-4 flex items-center justify-center text-slate-400 hover:text-slate-200 transition-colors z-10"
             style={{ width: "20px", height: "20px", background: "none", border: "none", cursor: "pointer" }}
           >

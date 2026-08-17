@@ -294,19 +294,17 @@ function Login() {
                 >
                   Password <span style={{ color: "#f43f5e" }}>*</span>
                 </label>
-                <button
-                  type="button"
+                <Link
+                  to="/forgot-password"
                   style={{
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
                     fontSize: "12px",
                     fontWeight: 700,
                     color: "#6366f1",
+                    textDecoration: "none",
                   }}
                 >
                   Forgot password?
-                </button>
+                </Link>
               </div>
 
               <Input
