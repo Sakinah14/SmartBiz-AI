@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Users, Pencil, Trash2, Mail, Phone, MapPin, Sparkles } from "lucide-react";
+import { Plus, Users, Pencil, Trash2, Mail, Phone, MapPin } from "lucide-react";
 import api from "../services/api";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -154,17 +154,13 @@ function Customers() {
       </div>
 
       {/* Total count card */}
-      <div className="glass rounded-xl p-5 border border-slate-700/30 flex items-center gap-4 flex-wrap">
+      <div className="glass rounded-xl p-5 border border-slate-700/30 flex items-center gap-4">
         <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500">
           <Users size={22} className="text-white" />
         </div>
         <div>
           <p className="text-xs text-slate-400">Total Customers</p>
           <p className="text-3xl font-black text-white">{customers.length}</p>
-        </div>
-        <div className="flex items-center gap-1.5 ml-auto text-xs text-violet-400 font-medium">
-          <Sparkles size={13} />
-          Segments trained on your order history (k-means)
         </div>
       </div>
 
