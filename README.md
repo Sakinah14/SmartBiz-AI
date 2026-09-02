@@ -35,9 +35,9 @@ npm install
 npm run dev
 ```
 
-The app runs on `http://localhost:5173` by default. It talks to the backend
-at `http://localhost:5000/api` (hardcoded in `frontend/src/services/api.js`
-— update that if you deploy the backend elsewhere).
+The app runs on `http://localhost:5173` by default and talks to the backend
+at `http://localhost:5000/api` unless `VITE_API_URL` is set (see
+`frontend/.env.example`) — needed when deploying, see below.
 
 ### Demo data
 
@@ -89,6 +89,31 @@ it, set the `baseUrl` collection variable if your API isn't on
 `localhost:5000`, and run **Auth → Login** first — it automatically stores
 the returned token for every other request in the collection.
 
+## Deployment
+
+Free-tier path: **backend on [Render](https://render.com), frontend on
+[Vercel](https://vercel.com)** — both deploy straight from this GitHub repo.
+
+**Backend (Render):**
+1. New → Web Service → connect this repo
+2. Root directory: `backend` · Build command: `npm install` · Start command: `npm start`
+3. Add environment variables: `MONGO_URI`, `JWT_SECRET`, `GEMINI_API_KEY`, `RESEND_API_KEY`, and `FRONTEND_URL` (fill this in after step 2 below)
+4. Deploy — note the resulting URL (e.g. `https://your-app.onrender.com`)
+
+**Frontend (Vercel):**
+1. New Project → import this repo
+2. Root directory: `frontend` (Vite is auto-detected)
+3. Add environment variable `VITE_API_URL` = `https://your-app.onrender.com/api` (your Render URL + `/api`)
+4. Deploy — note the resulting URL (e.g. `https://your-app.vercel.app`)
+
+**Then go back to Render** and set `FRONTEND_URL` to your Vercel URL (no
+trailing slash) — the backend's CORS lock only accepts requests from
+whatever origin is listed there.
+
+Render's free tier sleeps after 15 minutes of inactivity; the first request
+after that takes 30–50 seconds to wake up. Open the site yourself a few
+minutes before showing it to anyone.
+
 ## CI
 
 [`​.github/workflows/ci.yml`](.github/workflows/ci.yml) runs on every push
@@ -98,10 +123,6 @@ lint (informational only — see the workflow comment).
 
 ## Known limitations
 
-- The frontend's API base URL is hardcoded to `http://localhost:5000/api`
-  rather than driven by an environment variable — update
-  `frontend/src/services/api.js` before deploying the backend to a different
-  host.
 - There is no automated test suite yet; `backend/scripts/check.js` is a
   lightweight load/syntax check, not a substitute for real tests.
 - Password-reset email delivery uses Resend's shared sandbox sender
