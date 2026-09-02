@@ -11,7 +11,7 @@ orders, expenses, reports, and an AI assistant for business insights.
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 20.19+ or 22.12+ (required by Vite 8 / ESLint 10 — an older Node 20.x patch will fail `npm ci`)
 - A MongoDB connection string (local or [Atlas](https://www.mongodb.com/atlas))
 - A [Gemini API key](https://aistudio.google.com/apikey) (for the AI Assistant)
 - A [Resend API key](https://resend.com/api-keys) (for password-reset emails — optional for local dev)
