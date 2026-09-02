@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Users, Pencil, Trash2, Mail, Phone, MapPin } from "lucide-react";
+import { Plus, Users, Pencil, Trash2, Mail, Phone, MapPin, Sparkles } from "lucide-react";
 import api from "../services/api";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import Input from "../components/ui/Input";
 import Modal from "../components/ui/Modal";
 import Table from "../components/ui/Table";
+import Badge from "../components/ui/Badge";
 import ConfirmDialog from "../components/ui/ConfirmDialog";
 
 const emptyForm = { name: "", email: "", phone: "", address: "" };
@@ -20,6 +21,8 @@ function Customers() {
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [segments, setSegments] = useState({});
+  const [segmentsLoading, setSegmentsLoading] = useState(true);
 
   const fetchCustomers = async () => {
     try {
@@ -33,7 +36,21 @@ function Customers() {
     }
   };
 
-  useEffect(() => { fetchCustomers(); }, []);
+  const fetchSegments = async () => {
+    try {
+      setSegmentsLoading(true);
+      const { data } = await api.get("/customer-segments");
+      const byId = {};
+      data.forEach((s) => { byId[s._id] = s; });
+      setSegments(byId);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSegmentsLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchCustomers(); fetchSegments(); }, []);
 
   const openAdd = () => { setForm(emptyForm); setEditId(null); setIsModalOpen(true); };
   const openEdit = (c) => {
@@ -55,6 +72,7 @@ function Customers() {
       }
       setIsModalOpen(false);
       fetchCustomers();
+      fetchSegments();
     } catch (err) {
       toast.error(err.response?.data?.message || "Error saving customer");
     } finally {
@@ -70,6 +88,7 @@ function Customers() {
       toast.success("Customer deleted");
       setDeleteTarget(null);
       fetchCustomers();
+      fetchSegments();
     } catch (err) {
       toast.error(err.response?.data?.message || "Error deleting customer");
     } finally {
@@ -92,6 +111,18 @@ function Customers() {
     { key: "email", label: "Email", render: (r) => r.email || "—" },
     { key: "phone", label: "Phone", render: (r) => r.phone || "—" },
     { key: "address", label: "Address", render: (r) => r.address || "—" },
+    {
+      key: "segment",
+      label: "Segment",
+      render: (r) => {
+        if (segmentsLoading) {
+          return <span className="text-xs text-slate-500">—</span>;
+        }
+        const segment = segments[r._id]?.segment;
+        if (!segment) return <span className="text-xs text-slate-500">—</span>;
+        return <Badge status={segment} label={segment} />;
+      },
+    },
     {
       key: "actions", label: "Actions",
       render: (r) => (
@@ -123,13 +154,17 @@ function Customers() {
       </div>
 
       {/* Total count card */}
-      <div className="glass rounded-xl p-5 border border-slate-700/30 flex items-center gap-4">
+      <div className="glass rounded-xl p-5 border border-slate-700/30 flex items-center gap-4 flex-wrap">
         <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500">
           <Users size={22} className="text-white" />
         </div>
         <div>
           <p className="text-xs text-slate-400">Total Customers</p>
           <p className="text-3xl font-black text-white">{customers.length}</p>
+        </div>
+        <div className="flex items-center gap-1.5 ml-auto text-xs text-violet-400 font-medium">
+          <Sparkles size={13} />
+          Segments trained on your order history (k-means)
         </div>
       </div>
 

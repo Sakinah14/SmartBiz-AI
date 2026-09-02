@@ -8,6 +8,10 @@ const statusColors = {
   inactive: "bg-slate-500/15 text-slate-400 border-slate-500/30",
   low: "bg-rose-500/15 text-rose-400 border-rose-500/30",
   "in-stock": "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+  vip: "bg-violet-500/15 text-violet-400 border-violet-500/30",
+  regular: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30",
+  "at-risk": "bg-rose-500/15 text-rose-400 border-rose-500/30",
+  new: "bg-slate-500/15 text-slate-400 border-slate-500/30",
 };
 
 function Badge({ status, label, className = "" }) {

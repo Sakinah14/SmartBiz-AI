@@ -11,6 +11,7 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 const reportRoutes = require("./routes/reportRoutes");
 const aiRoutes = require("./routes/aiRoutes");
 const decisionEventRoutes = require("./routes/decisionEventRoutes");
+const customerSegmentRoutes = require("./routes/customerSegmentRoutes");
 
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
@@ -50,6 +51,7 @@ app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/decision-events", decisionEventRoutes);
+app.use("/api/customer-segments", customerSegmentRoutes);
 app.get("/", (req, res) => {
   res.send("🚀 SmartBiz AI Backend Running");
 });
