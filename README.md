@@ -93,16 +93,21 @@ the returned token for every other request in the collection.
 
 Free-tier path: **backend on [Render](https://render.com), frontend on
 [Vercel](https://vercel.com)** — both deploy straight from this GitHub repo.
+[`render.yaml`](render.yaml) and [`frontend/vercel.json`](frontend/vercel.json)
+already capture the build settings, so the dashboards mostly just need your
+secrets.
 
 **Backend (Render):**
-1. New → Web Service → connect this repo
-2. Root directory: `backend` · Build command: `npm install` · Start command: `npm start`
-3. Add environment variables: `MONGO_URI`, `JWT_SECRET`, `GEMINI_API_KEY`, `RESEND_API_KEY`, and `FRONTEND_URL` (fill this in after step 2 below)
-4. Deploy — note the resulting URL (e.g. `https://your-app.onrender.com`)
+1. New → **Blueprint** → connect this repo (Render reads `render.yaml`
+   automatically and pre-fills root dir, build/start commands)
+2. When prompted, fill in the secret values: `MONGO_URI`, `JWT_SECRET`,
+   `GEMINI_API_KEY`, `RESEND_API_KEY` — leave `FRONTEND_URL` for now
+3. Deploy — note the resulting URL (e.g. `https://your-app.onrender.com`)
 
 **Frontend (Vercel):**
 1. New Project → import this repo
-2. Root directory: `frontend` (Vite is auto-detected)
+2. Root directory: `frontend` (Vite is auto-detected; `vercel.json` adds the
+   client-side routing rewrite React Router needs)
 3. Add environment variable `VITE_API_URL` = `https://your-app.onrender.com/api` (your Render URL + `/api`)
 4. Deploy — note the resulting URL (e.g. `https://your-app.vercel.app`)
 
